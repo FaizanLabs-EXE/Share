@@ -1,0 +1,5 @@
+$ErrorActionPreference="Stop"
+$port=8765;$l=[Net.HttpListener]::new();$l.Prefixes.Add("http://127.0.0.1:$port/");$l.Start()
+Write-Host "Faizan SwiftShare ADB Bridge: http://127.0.0.1:$port"
+function send($c,$code,$obj){$b=[Text.Encoding]::UTF8.GetBytes(($obj|ConvertTo-Json -Compress));$c.Response.StatusCode=$code;$c.Response.ContentType="application/json";$c.Response.Headers.Add("Access-Control-Allow-Origin","*");$c.Response.ContentLength64=$b.Length;$c.Response.OutputStream.Write($b,0,$b.Length);$c.Response.Close()}
+while($l.IsListening){try{$c=$l.GetContext();if($c.Request.Url.AbsolutePath -eq "/devices"){$o=& adb devices -l 2>&1;send $c 200 @{ok=$true;output=($o -join "`n")}}else{send $c 404 @{ok=$false;error="Not found"}}}catch{try{send $c 500 @{ok=$false;error=$_.Exception.Message}}catch{}}}
